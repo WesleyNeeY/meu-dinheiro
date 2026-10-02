@@ -1,0 +1,10 @@
+{
+  "name":"Meu Dinheiro",
+  "short_name":"Meu Dinheiro",
+  "start_url":"./index.html",
+  "display":"standalone",
+  "background_color":"#ffffff",
+  "theme_color":"#078b5b",
+  "lang":"pt-BR",
+  "icons":[]
+}

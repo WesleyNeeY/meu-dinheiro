@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#078b5b"><link rel="manifest" href="manifest.webmanifest">
+<title>Meu Dinheiro</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#eef3f1;color:#17231f;font-family:Arial,sans-serif}
+#app{max-width:430px;min-height:100vh;margin:auto;background:#fff}.screen{display:none;padding:20px 18px 92px;min-height:100vh}.screen.active{display:block}
+h1{font-size:25px;margin:4px 0 7px}.sub,.small{color:#6d7a74;font-size:13px}.card{padding:17px;border-radius:16px;background:#fff;box-shadow:0 3px 16px #00000010;margin:12px 0}
+.green{background:#078b5b;color:#fff}.balance{font-size:30px;font-weight:700;margin-top:7px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.value{font-size:17px;font-weight:700;margin-top:5px}
+.btn{width:100%;padding:13px;border:0;border-radius:13px;background:#078b5b;color:#fff;font-weight:700;font-size:15px}.btn.light{background:#e6f5ef;color:#087c55}
+.input,select{width:100%;padding:13px;border:1px solid #d8e2dd;border-radius:11px;margin:6px 0 12px;font-size:15px;background:white}
+.item{padding:13px 0;border-bottom:1px solid #edf0ef}.item:last-child{border:0}.row{display:flex;justify-content:space-between;align-items:center}
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(430px,100vw);height:70px;background:#fff;border-top:1px solid #e6ebe8;display:flex;z-index:10}.nav button{flex:1;border:0;background:#fff;color:#6b7771;font-size:10px}.nav button b{display:block;font-size:20px}.nav button.on{color:#078b5b}
+.modal{position:fixed;inset:0;background:#0007;display:none;align-items:flex-end;z-index:20}.modal.open{display:flex}.sheet{background:white;width:min(430px,100vw);margin:auto 0 0;padding:20px;border-radius:22px 22px 0 0;max-height:88vh;overflow:auto}
+.toast{position:fixed;left:50%;bottom:82px;transform:translateX(-50%);background:#17231f;color:#fff;padding:11px 15px;border-radius:20px;display:none;z-index:30;font-size:13px}
+.bar{height:9px;background:#e5ebe8;border-radius:10px;overflow:hidden}.bar i{display:block;height:100%;background:#0a9b66}
+</style></head>
+<body>
+<div id="app">
+<section id="home" class="screen active">
+<div class="row"><div><h1>Meu Dinheiro 👋</h1><div class="sub">Seu resumo financeiro</div></div><button onclick="show('settings')" style="border:0;background:none;font-size:22px">⚙️</button></div>
+<div class="card green"><div>Saldo disponível</div><div class="balance" id="balance">R$ 0,00</div></div>
+<div class="grid"><div class="card"><div class="small">Receitas</div><div class="value" id="incomeTotal">R$ 0,00</div></div><div class="card"><div class="small">Gastos</div><div class="value" id="expenseTotal">R$ 0,00</div></div></div>
+<div class="card"><div class="row"><b>Meta principal</b><span id="goalPct">0%</span></div><h3 id="goalName">Nenhuma meta</h3><div class="bar"><i id="goalBar" style="width:0%"></i></div><div class="small" id="goalText">Crie uma meta para começar.</div></div>
+<h3>Últimos lançamentos</h3><div class="card" id="recent"></div>
+</section>
+
+<section id="transactions" class="screen"><h1>Movimentações</h1><div class="sub">Tudo que entra e sai da sua conta.</div><button class="btn" onclick="openTx()">+ Nova movimentação</button><div class="card" id="txList"></div></section>
+
+<section id="goals" class="screen"><h1>Metas</h1><div class="sub">Defina objetivos e acompanhe seu progresso.</div><button class="btn" onclick="openGoal()">+ Nova meta</button><div id="goalList"></div></section>
+
+<section id="simulator" class="screen"><h1>Simulador</h1><div class="sub">Juros compostos para planejamento.</div><div class="card">
+<label>Valor mensal</label><input class="input" id="sMonthly" type="number" value="1000">
+<label>Taxa mensal (%)</label><input class="input" id="sRate" type="number" value="1" step=".1">
+<label>Tempo (anos)</label><input class="input" id="sYears" type="number" value="10">
+<button class="btn" onclick="simulate()">Calcular</button><div class="card green"><div>Valor final estimado</div><div class="balance" id="simResult">R$ 0,00</div><div id="simInvested"></div></div></div></section>
+
+<section id="learn" class="screen"><h1>Aprender</h1><div class="sub">Conteúdo curto para melhorar sua organização financeira.</div><div id="lessons"></div></section>
+<section id="settings" class="screen"><h1>Configurações</h1><div class="card"><b>Meu Dinheiro</b><p class="small">Os dados deste protótipo ficam salvos neste aparelho usando armazenamento local.</p></div><button class="btn light" onclick="resetData()">Apagar todos os dados</button></section>
+
+<nav class="nav">
+<button data-s="home" onclick="show('home')"><b>⌂</b>Início</button><button data-s="transactions" onclick="show('transactions')"><b>▤</b>Movimentos</button><button data-s="goals" onclick="show('goals')"><b>◎</b>Metas</button><button data-s="simulator" onclick="show('simulator')"><b>▥</b>Simular</button><button data-s="learn" onclick="show('learn')"><b>?</b>Aprender</button>
+</nav>
+</div>
+
+<div id="modal" class="modal"><div class="sheet" id="sheet"></div></div><div id="toast" class="toast"></div>
+<script>
+const KEY='meuDinheiroV1';
+let db=JSON.parse(localStorage.getItem(KEY)||'{"tx":[],"goals":[],"lessons":[]}');
+const money=n=>Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const save=()=>{localStorage.setItem(KEY,JSON.stringify(db));render()};
+function show(id){document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active');document.querySelectorAll('.nav button').forEach(x=>x.classList.toggle('on',x.dataset.s===id));if(id==='home')render();if(id==='transactions')renderTx();if(id==='goals')renderGoals();if(id==='learn')renderLessons();scrollTo(0,0)}
+function openModal(html){document.getElementById('sheet').innerHTML=html;document.getElementById('modal').classList.add('open')}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+function toast(t){let e=document.getElementById('toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2200)}
+function openTx(){openModal(`<h2>Nova movimentação</h2><label>Tipo</label><select id="txType"><option value="income">Receita</option><option value="expense">Gasto</option></select><label>Descrição</label><input class="input" id="txDesc" placeholder="Ex.: Supermercado"><label>Valor</label><input class="input" id="txVal" type="number" step=".01" placeholder="0,00"><label>Categoria</label><input class="input" id="txCat" placeholder="Ex.: Alimentação"><button class="btn" onclick="addTx()">Salvar</button><br><br><button class="btn light" onclick="closeModal()">Cancelar</button>`)}
+function addTx(){let type=document.getElementById('txType').value,desc=document.getElementById('txDesc').value.trim(),val=+document.getElementById('txVal').value,cat=document.getElementById('txCat').value.trim()||'Outros';if(!desc||!val||val<0)return toast('Preencha descrição e valor');db.tx.unshift({id:Date.now(),type,desc,val,cat,date:new Date().toLocaleDateString('pt-BR')});save();closeModal();toast('Movimentação salva')}
+function delTx(id){db.tx=db.tx.filter(x=>x.id!==id);save();toast('Movimentação excluída')}
+function openGoal(){openModal(`<h2>Nova meta</h2><label>Nome</label><input class="input" id="gName" placeholder="Ex.: Viagem"><label>Valor da meta</label><input class="input" id="gTarget" type="number" step=".01"><label>Já guardado</label><input class="input" id="gSaved" type="number" step=".01" value="0"><button class="btn" onclick="addGoal()">Salvar</button><br><br><button class="btn light" onclick="closeModal()">Cancelar</button>`)}
+function addGoal(){let name=document.getElementById('gName').value.trim(),target=+document.getElementById('gTarget').value,saved=+document.getElementById('gSaved').value||0;if(!name||!target||target<=0)return toast('Preencha nome e valor');db.goals.push({id:Date.now(),name,target,saved});save();closeModal();toast('Meta criada')}
+function delGoal(id){db.goals=db.goals.filter(x=>x.id!==id);save();toast('Meta excluída')}
+function totals(){let inc=db.tx.filter(x=>x.type==='income').reduce((a,x)=>a+x.val,0),exp=db.tx.filter(x=>x.type==='expense').reduce((a,x)=>a+x.val,0);return{inc,exp,balance:inc-exp}}
+function render(){let t=totals();incomeTotal.textContent=money(t.inc);expenseTotal.textContent=money(t.exp);balance.textContent=money(t.balance);let g=db.goals[0];if(g){let p=Math.min(100,g.saved/g.target*100);goalName.textContent=g.name;goalPct.textContent=Math.round(p)+'%';goalBar.style.width=p+'%';goalText.textContent=`${money(g.saved)} de ${money(g.target)}`}else{goalName.textContent='Nenhuma meta';goalPct.textContent='0%';goalBar.style.width='0%';goalText.textContent='Crie uma meta para começar.'}recent.innerHTML=db.tx.slice(0,5).map(x=>`<div class="item"><b>${x.type==='income'?'🟢':'🔴'} ${esc(x.desc)}</b><span style="float:right">${x.type==='income'?'+':'-'} ${money(x.val)}</span><div class="small">${esc(x.cat)} · ${x.date}</div></div>`).join('')||'<div class="small">Nenhuma movimentação ainda.</div>'}
+function renderTx(){txList.innerHTML=db.tx.map(x=>`<div class="item"><b>${esc(x.desc)}</b><span style="float:right">${x.type==='income'?'+':'-'} ${money(x.val)}</span><div class="small">${esc(x.cat)} · ${x.date} <button onclick="delTx(${x.id})" style="float:right;border:0;background:none">🗑️</button></div></div>`).join('')||'<div class="small">Adicione sua primeira movimentação.</div>'}
+function renderGoals(){goalList.innerHTML=db.goals.map(g=>{let p=Math.min(100,g.saved/g.target*100);return `<div class="card"><div class="row"><b>${esc(g.name)}</b><span>${Math.round(p)}%</span></div><p>${money(g.saved)} de ${money(g.target)}</p><div class="bar"><i style="width:${p}%"></i></div><br><button class="btn light" onclick="addToGoal(${g.id})">Adicionar valor</button> <button onclick="delGoal(${g.id})" style="margin-top:8px;width:100%;padding:10px;border:0;background:#fff0f0;color:#a33;border-radius:10px">Excluir</button></div>`}).join('')||'<div class="card small">Você ainda não criou uma meta.</div>'}
+function addToGoal(id){openModal(`<h2>Adicionar à meta</h2><input class="input" id="goalAdd" type="number" step=".01" placeholder="Valor"><button class="btn" onclick="saveGoalAdd(${id})">Adicionar</button>`)}
+function saveGoalAdd(id){let v=+document.getElementById('goalAdd').value,g=db.goals.find(x=>x.id===id);if(!v||v<=0)return toast('Informe um valor');g.saved+=v;save();closeModal();toast('Meta atualizada')}
+function renderLessons(){let ls=[['📒','Como montar um orçamento','Organize sua renda e seus gastos.'],['🛟','Reserva de emergência','Entenda como criar uma reserva para imprevistos.'],['💳','Cartão de crédito','Aprenda a acompanhar fatura e parcelas.'],['📈','Juros compostos','Veja como tempo e rendimento afetam o dinheiro.'],['🎯','Metas financeiras','Transforme objetivos em números e prazos.']];lessons.innerHTML=ls.map(x=>`<div class="card" onclick="toast('Conteúdo: ${x[1]}')"><b>${x[0]} ${x[1]}</b><p class="small">${x[2]}</p></div>`).join('')}
+function simulate(){let p=+sMonthly.value||0,r=(+sRate.value||0)/100,n=(+sYears.value||0)*12,total=r? p*((Math.pow(1+r,n)-1)/r):p*n;simResult.textContent=money(total);simInvested.textContent='Total investido: '+money(p*n)}
+function resetData(){if(confirm('Apagar todos os dados deste aparelho?')){db={tx:[],goals:[],lessons:[]};save();toast('Dados apagados')}}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[c]))}
+render();simulate();show('home');
+</script></body></html>
