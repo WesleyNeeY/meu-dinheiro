@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#078b5b">
+
+  <title>Baixar Meu Dinheiro</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #eef3f1;
+      color: #17231f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 430px;
+      background: white;
+      border-radius: 24px;
+      padding: 32px 24px;
+      text-align: center;
+      box-shadow: 0 8px 30px #00000015;
+    }
+
+    .logo {
+      width: 85px;
+      height: 85px;
+      margin: 0 auto 18px;
+      border-radius: 22px;
+      background: #078b5b;
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+    }
+
+    .subtitle {
+      color: #6d7a74;
+      margin: 10px 0 28px;
+      line-height: 1.5;
+    }
+
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      margin-top: 12px;
+      border-radius: 14px;
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: bold;
+      border: 0;
+      cursor: pointer;
+    }
+
+    .primary {
+      background: #078b5b;
+      color: white;
+    }
+
+    .secondary {
+      background: #e6f5ef;
+      color: #087c55;
+    }
+
+    .instructions {
+      margin-top: 28px;
+      padding: 18px;
+      background: #f6f9f8;
+      border-radius: 16px;
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .instructions h3 {
+      margin-top: 0;
+    }
+
+    .footer {
+      margin-top: 24px;
+      color: #89938f;
+      font-size: 12px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="logo">💰</div>
+
+  <h1>Meu Dinheiro</h1>
+
+  <p class="subtitle">
+    Organize suas finanças, acompanhe seus gastos,
+    crie metas e planeje seu futuro.
+  </p>
+
+  <button id="installButton" class="btn primary" style="display:none;">
+    📲 Instalar aplicativo
+  </button>
+
+  <a href="./" class="btn secondary">
+    💰 Abrir Meu Dinheiro
+  </a>
+
+  <div class="instructions">
+
+    <h3>📱 Como instalar</h3>
+
+    <b>Android</b><br>
+    Abra esta página no Chrome e toque em
+    <b>Instalar aplicativo</b> quando o botão aparecer.
+
+    <br><br>
+
+    <b>iPhone / iPad</b><br>
+    Abra esta página no Safari, toque em
+    <b>Compartilhar</b> e depois em
+    <b>Adicionar à Tela de Início</b>.
+
+  </div>
+
+  <div class="footer">
+    Meu Dinheiro • Seu controle financeiro
+  </div>
+
+</div>
+
+<script>
+  let deferredPrompt;
+
+  const installButton = document.getElementById('installButton');
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredPrompt = event;
+    installButton.style.display = 'block';
+  });
+
+  installButton.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+
+    await deferredPrompt.userChoice;
+
+    deferredPrompt = null;
+    installButton.style.display = 'none';
+  });
+</script>
+
+</body>
+</html>
